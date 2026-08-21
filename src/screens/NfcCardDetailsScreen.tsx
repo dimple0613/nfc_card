@@ -2,7 +2,7 @@ import React from 'react';
 import {View, ScrollView, Text, StyleSheet, SafeAreaView} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../../App';
-import {formatUid, formatTechnologies, formatTimestamp, formatRecordPayload} from '../utils/nfcFormatter';
+import {formatUid, formatTechnologies, formatTimestamp, formatRecordPayload, formatBytes, bytesToAscii} from '../utils/nfcFormatter';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardDetails'>;
 
@@ -91,6 +91,118 @@ export function NfcCardDetailsScreen({route}: Props): React.JSX.Element {
               {formatTimestamp(card.detectedAt)}
             </Text>
           </View>
+
+          {card.memory && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Memory</Text>
+              <View style={styles.recordContainer}>
+                <View style={styles.recordField}>
+                  <Text style={styles.recordLabel}>Capacity:</Text>
+                  <Text style={styles.recordValue}>
+                    {formatBytes(card.memory.maxSize)}
+                  </Text>
+                </View>
+                <View style={styles.recordField}>
+                  <Text style={styles.recordLabel}>Used:</Text>
+                  <Text style={styles.recordValue}>
+                    {formatBytes(card.memory.usedBytes)} (approx)
+                  </Text>
+                </View>
+                <View style={styles.recordField}>
+                  <Text style={styles.recordLabel}>Free:</Text>
+                  <Text style={styles.recordValue}>
+                    {formatBytes(Math.max(0, card.memory.maxSize - card.memory.usedBytes))}
+                  </Text>
+                </View>
+                <View style={styles.recordField}>
+                  <Text style={styles.recordLabel}>Writable:</Text>
+                  <Text style={styles.recordValue}>
+                    {card.memory.writable ? 'Yes' : 'No'}
+                  </Text>
+                </View>
+                <View style={styles.recordField}>
+                  <Text style={styles.recordLabel}>Formattable:</Text>
+                  <Text style={styles.recordValue}>
+                    {card.memory.canFormat ? 'Yes' : 'No'}
+                  </Text>
+                </View>
+              </View>
+            </>
+          )}
+
+          {card.tagInfo && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>Chip Info</Text>
+              <View style={styles.recordContainer}>
+                {card.tagInfo.manufacturer && (
+                  <View style={styles.recordField}>
+                    <Text style={styles.recordLabel}>Maker:</Text>
+                    <Text style={styles.recordValue}>{card.tagInfo.manufacturer}</Text>
+                  </View>
+                )}
+                {card.tagInfo.atqa && (
+                  <View style={styles.recordField}>
+                    <Text style={styles.recordLabel}>ATQA:</Text>
+                    <Text style={styles.recordValue}>{card.tagInfo.atqa}</Text>
+                  </View>
+                )}
+                {card.tagInfo.sak && (
+                  <View style={styles.recordField}>
+                    <Text style={styles.recordLabel}>SAK:</Text>
+                    <Text style={styles.recordValue}>{card.tagInfo.sak}</Text>
+                  </View>
+                )}
+                {card.tagInfo.dsfId && (
+                  <View style={styles.recordField}>
+                    <Text style={styles.recordLabel}>DSF ID:</Text>
+                    <Text style={styles.recordValue}>{card.tagInfo.dsfId}</Text>
+                  </View>
+                )}
+                {card.tagInfo.historicalBytes && (
+                  <View style={styles.recordField}>
+                    <Text style={styles.recordLabel}>Hist. bytes:</Text>
+                    <Text style={styles.recordValue}>{card.tagInfo.historicalBytes}</Text>
+                  </View>
+                )}
+                {card.tagInfo.maxTransceiveLength != null && (
+                  <View style={styles.recordField}>
+                    <Text style={styles.recordLabel}>Max frame:</Text>
+                    <Text style={styles.recordValue}>
+                      {card.tagInfo.maxTransceiveLength} bytes
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
+
+          {card.rawDump && card.rawDump.units.length > 0 && (
+            <>
+              <View style={styles.divider} />
+              <Text style={styles.sectionTitle}>
+                Raw Memory Dump ({card.rawDump.technology})
+                {card.rawDump.truncated ? ' - partial' : ''}
+              </Text>
+              <View style={styles.dumpContainer}>
+                {card.rawDump.units.map(unit => (
+                  <View key={unit.index} style={styles.dumpRow}>
+                    <Text style={styles.dumpIndex}>
+                      {card.rawDump!.unitLabel === 'page' ? 'P' : 'B'}
+                      {unit.index.toString().padStart(3, '0')}
+                    </Text>
+                    <View style={styles.dumpData}>
+                      <Text style={styles.dumpHex}>{unit.hex}</Text>
+                      <Text style={styles.dumpAscii}>|{bytesToAscii(
+                        unit.hex.split(' ').filter(Boolean).map(h => parseInt(h, 16)),
+                      )}|</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
 
           <View style={styles.divider} />
 
@@ -202,5 +314,34 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#991B1B',
+  },
+  dumpContainer: {
+    backgroundColor: '#111827',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  dumpRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  dumpIndex: {
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: '#9CA3AF',
+    width: 36,
+  },
+  dumpData: {
+    flex: 1,
+  },
+  dumpHex: {
+    fontSize: 10,
+    fontFamily: 'monospace',
+    color: '#D1FAE5',
+  },
+  dumpAscii: {
+    fontSize: 9,
+    fontFamily: 'monospace',
+    color: '#6B7280',
   },
 });

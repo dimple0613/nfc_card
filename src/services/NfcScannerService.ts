@@ -1,6 +1,7 @@
 import NfcManager, {NfcEvents, NdefRecord} from 'react-native-nfc-manager';
 import {NfcCard, NfcScannerState} from '../models/NfcCard';
 import {parseNfcTag} from './NfcParser';
+import {readFullTagDetails} from './TagReader';
 import {NfcDuplicateDetector} from './NfcDuplicateDetector';
 
 type StateChangeListener = (state: NfcScannerState) => void;
@@ -199,6 +200,19 @@ export class NfcScannerService {
       };
 
       const card = parseNfcTag(enrichedTag);
+
+      try {
+        const fullDetails = await readFullTagDetails(tagObj);
+        card.memory = fullDetails.memory;
+        card.tagInfo = fullDetails.tagInfo;
+        card.rawDump = fullDetails.rawDump;
+      } catch (detailsError) {
+        this.log(
+          `[NFC] Full details read error: ${
+            detailsError instanceof Error ? detailsError.message : 'Unknown'
+          }`,
+        );
+      }
 
       if (this.duplicateDetector.hasCardBeenDetected(card.id)) {
         this.log(`[NFC] Duplicate card: ${card.id}`);
