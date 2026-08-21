@@ -19,7 +19,7 @@
     "react-native": "0.75.4",
     "react-native-nfc-manager": "^3.17.2",
     "react-native-safe-area-context": "^5.9.1",
-    "react-native-screens": "4.18.0"
+    "react-native-screens": "4.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
